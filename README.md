@@ -70,6 +70,13 @@ DATABASE_URL=postgres://user:pass@localhost:5432/upi npm start
 
 The schema is created at start-up, and the demo ledger is reset to fixed fictional balances.
 
+## Deploy (free tier)
+1. Create a free PostgreSQL database on [Neon](https://neon.com) and copy its pooled connection string (it ends in `?sslmode=require`).
+2. In [Render](https://render.com): **New → Blueprint**, then pick this repository. `render.yaml` defines one free Docker web service.
+3. Paste the connection string as `DATABASE_URL` when Render asks for it.
+
+The schema is created on start and the demo ledger is reset on start, so a free instance spinning down only resets the simulation. Writes are rate-limited (`UPI_RATE_LIMIT_PER_MIN`, 60 in the blueprint).
+
 ## Tests
 
 ```bash

@@ -7,7 +7,7 @@ pg.types.setTypeParser(20, (v) => Number(v));
 
 export function createPool(connectionString = process.env.DATABASE_URL) {
   if (!connectionString) throw new Error("DATABASE_URL is not set.");
-  return new pg.Pool({ connectionString, max: 10, idleTimeoutMillis: 10_000 });
+  return new pg.Pool({ connectionString, max: Number(process.env.PG_POOL_MAX ?? 10), idleTimeoutMillis: 10_000 });
 }
 
 export async function migrate(pool) {

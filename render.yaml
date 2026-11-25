@@ -1,0 +1,18 @@
+# One-click deploy: Render dashboard → New → Blueprint → this repository.
+# Free web service (spins down after 15 min idle; first request then takes ~1 min).
+# DATABASE_URL: paste a Neon (free plan) pooled connection string with ?sslmode=require.
+services:
+  - type: web
+    name: upi-offline-mesh
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: UPI_TRUST_PROXY
+        value: "1"
+      - key: UPI_RATE_LIMIT_PER_MIN
+        value: "60"
+      - key: PG_POOL_MAX
+        value: "5"
