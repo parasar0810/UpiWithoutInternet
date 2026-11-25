@@ -1,0 +1,26 @@
+{
+  "name": "upi-offline-mesh",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Offline payment network SIMULATION: gossip mesh, hybrid encryption, signed payments and exactly-once settlement in PostgreSQL.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "lint": "eslint src tests"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "supertest": "^7.3.2"
+  }
+}
