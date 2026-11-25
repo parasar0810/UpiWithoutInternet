@@ -1,0 +1,12 @@
+# Local demo: API + PostgreSQL. Simulation only; no real money.
+services:
+  db:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: upi, POSTGRES_PASSWORD: upi-local-only, POSTGRES_DB: upi }
+    healthcheck: { test: ["CMD", "pg_isready", "-U", "upi"], interval: 3s, retries: 20 }
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgres://upi:upi-local-only@db:5432/upi
+    ports: ["${UPI_PORT:-8080}:8080"]
+    depends_on: { db: { condition: service_healthy } }
