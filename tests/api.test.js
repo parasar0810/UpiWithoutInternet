@@ -135,3 +135,19 @@ test("idle sandboxes expire and their rows are removed", { skip }, async () => {
   const rows = await pool.query("SELECT count(*)::int AS n FROM accounts WHERE sandbox = $1", [id]);
   assert.equal(rows.rows[0].n, 0);
 });
+
+test("behind Render, the rate-limit key is the client IP that Cloudflare appended, not a proxy", { skip }, async () => {
+  const { app: srv } = await make({ rateLimitPerMin: 2, trustProxy: true, proxyHops: 3 });
+  const hit = (client, edge) => request(srv).post("/api/mesh/gossip").set("X-Forwarded-For", `${client}, ${edge}, 10.28.0.12`);
+  assert.deepEqual([(await hit("203.0.113.9", "104.23.1.71")).status, (await hit("203.0.113.9", "172.68.0.5")).status, (await hit("203.0.113.9", "104.23.1.71")).status], [200, 200, 429]);
+  assert.equal((await hit("198.51.100.7", "104.23.1.71")).status, 200, "another client sharing the same edge has its own budget");
+});
+
+test("the rate limit follows a visitor's sandbox across IP changes", { skip }, async () => {
+  const { app: srv } = await make({ rateLimitPerMin: 2, trustProxy: true, proxyHops: 3 });
+  const agent = request.agent(srv);
+  await agent.get("/api/state");
+  const codes = [];
+  for (let i = 0; i < 3; i++) codes.push((await agent.post("/api/mesh/gossip").set("X-Forwarded-For", `198.51.100.${i}, 104.23.1.71, 10.28.0.12`)).status);
+  assert.deepEqual(codes, [200, 200, 429]);
+});

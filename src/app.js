@@ -25,6 +25,9 @@ export async function createApp(pool, {
   serverKeys = generateServerKeys(),
   rateLimitPerMin = Number(process.env.UPI_RATE_LIMIT_PER_MIN ?? 120),
   trustProxy = process.env.UPI_TRUST_PROXY === "1",
+  // Proxies in front of the app. On Render, X-Forwarded-For is "client, Cloudflare edge, Render
+  // internal", so the client is 3 hops back; trusting fewer keys the limit on a shared proxy IP.
+  proxyHops = Number(process.env.UPI_PROXY_HOPS || (process.env.RENDER ? 3 : 1)),
   maxSandboxes = Number(process.env.UPI_MAX_SANDBOXES ?? 100),
   sandboxTtlMs = Number(process.env.UPI_SANDBOX_TTL_MIN ?? 30) * 60_000,
   secureCookie = process.env.NODE_ENV === "production",
@@ -68,22 +71,25 @@ export async function createApp(pool, {
 
   const app = express();
   app.disable("x-powered-by");
-  if (trustProxy) app.set("trust proxy", 1);
+  if (trustProxy) app.set("trust proxy", proxyHops);
   app.use(express.json({ limit: "32kb" }));
   app.use((req, res, next) => {
     res.set({ "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin" });
     next();
   });
 
-  // Per-client rate limit on state-changing requests.
+  // Per-client rate limit on state-changing requests, keyed by client IP and (if present) the
+  // sandbox cookie, so a visitor whose public IP changes between requests is still limited.
   const hits = new Map();
   app.use((req, res, next) => {
     if (req.method === "GET") return next();
-    const now = Date.now(), key = req.ip;
-    const q = (hits.get(key) ?? []).filter((t) => now - t < 60_000);
-    if (q.length >= rateLimitPerMin) return res.status(429).json({ error: { code: "rate_limited", message: `Limit is ${rateLimitPerMin} actions per minute.` } });
-    q.push(now);
-    hits.set(key, q);
+    const now = Date.now();
+    const sb = readCookie(req.headers.cookie, SANDBOX_COOKIE);
+    const keys = [`ip:${req.ip}`, ...(isSandboxId(sb) ? [`sb:${sb}`] : [])];
+    const queues = keys.map((k) => (hits.get(k) ?? []).filter((t) => now - t < 60_000));
+    if (queues.some((q) => q.length >= rateLimitPerMin)) return res.status(429).json({ error: { code: "rate_limited", message: `Limit is ${rateLimitPerMin} actions per minute.` } });
+    keys.forEach((k, i) => { queues[i].push(now); hits.set(k, queues[i]); });
+    if (hits.size > 10_000) for (const [k, q] of hits) if (!q.some((t) => now - t < 60_000)) hits.delete(k);
     next();
   });
 
