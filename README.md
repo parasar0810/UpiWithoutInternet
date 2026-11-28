@@ -35,7 +35,7 @@ flowchart LR
   L --> K[(COMMIT — or ROLLBACK releases the claim)]
 ```
 
-**Guarantee, precisely.** Within this PostgreSQL database there is **at most one committed settlement per packet hash**, enforced by the `processed_packets` primary key and unique constraints on `transactions.packet_hash` and `nonce`. Delivery through the mesh is deliberately *at-least-once*. "Exactly once" here means one settlement for however many deliveries, not exactly-once networking.
+**Guarantee, precisely.** Within one sandbox of this PostgreSQL database there is **at most one committed settlement per packet hash**, enforced by the `processed_packets` primary key `(sandbox, packet_hash)` and unique constraints on `(sandbox, packet_hash)` and `(sandbox, nonce)`. Delivery through the mesh is deliberately *at-least-once*. "Exactly once" here means one settlement for however many deliveries, not exactly-once networking.
 
 ## The console
 - **Mesh network:** seven devices, radio-range links and two internet bridges.
