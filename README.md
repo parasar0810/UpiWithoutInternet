@@ -10,7 +10,7 @@ A **simulation** of how a payment could travel from a phone with no connectivity
 |---|---|
 | **Stack** | Node.js 22 · Express 5 · PostgreSQL 16 (`pg`) · `node:crypto` · React + TypeScript + Tailwind |
 | **Tests** | 34 `node:test` cases against a real PostgreSQL, stable across repeated runs |
-| **Live demo** | Not deployed yet |
+| **Live demo** | https://upi-offline-mesh-0r6x.onrender.com (Render free tier + Neon PostgreSQL; the first request after idle can take up to a minute) |
 
 ## What it demonstrates
 1. **Untrusted relays can carry a payment without reading or altering it.** Hybrid encryption: a fresh AES-256-GCM key per packet, wrapped with the server's RSA-OAEP (SHA-256) key. Any flipped bit fails the GCM tag.
