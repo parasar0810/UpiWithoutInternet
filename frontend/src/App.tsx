@@ -6,7 +6,7 @@ type Event = { seq: number; at: number; round: number; type: string; message: st
 type Account = { vpa: string; name: string; balance_paise: number };
 type Tx = { id: number; packet_hash: string; sender: string; receiver: string; amount_paise: number; status: string; reason: string | null; settled_at: string; bridge_node: string | null; hop_count: number | null };
 type Processed = { packet_hash: string; outcome: string; reason: string | null; bridge_node: string | null; received_at: string };
-type State = { mesh: { round: number; devices: Device[]; links: [string, string][]; events: Event[] }; ledger: { accounts: Account[]; transactions: Tx[]; processed: Processed[]; totalPaise: number }; simulation: boolean };
+type State = { mesh: { round: number; devices: Device[]; links: [string, string][]; events: Event[] }; ledger: { accounts: Account[]; transactions: Tx[]; processed: Processed[]; totalPaise: number }; simulation: boolean; sandbox?: { isolated: boolean; idleMinutes: number } };
 type Scenario = { scenario: string; description: string; outcomes: string[]; reason?: string };
 
 const rupees = (p: number) => `₹${(p / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -108,7 +108,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh">
-      <div className="bg-navy px-4 py-2 text-center text-xs text-white">Simulation only — fictional accounts and balances. No real money, UPI IDs, bank data or devices are involved.</div>
+      <div className="bg-navy px-4 py-2 text-center text-xs text-white">Simulation only — fictional accounts and balances. No real money, UPI IDs, bank data or devices are involved.{s?.sandbox?.isolated && <> This sandbox is private to you and is cleared after {s.sandbox.idleMinutes} minutes idle.</>}</div>
       <header className="border-b border-rule bg-card">
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">

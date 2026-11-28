@@ -9,7 +9,7 @@ A **simulation** of how a payment could travel from a phone with no connectivity
 | | |
 |---|---|
 | **Stack** | Node.js 22 · Express 5 · PostgreSQL 16 (`pg`) · `node:crypto` · React + TypeScript + Tailwind |
-| **Tests** | 34 `node:test` cases against a real PostgreSQL, stable across repeated runs |
+| **Tests** | 38 `node:test` cases against a real PostgreSQL, stable across repeated runs |
 | **Live demo** | https://upi-offline-mesh-0r6x.onrender.com (Render free tier + Neon PostgreSQL; the first request after idle can take up to a minute) |
 
 ## What it demonstrates
@@ -105,6 +105,8 @@ The settlement and API tests need a real PostgreSQL (CI starts one as a service)
 | POST | `/api/reset` | Reset mesh and ledger |
 | GET | `/api/server-key` | Server RSA public key |
 
+**Per-visitor sandboxes.** Each visitor gets a private sandbox, identified by a random ID in an HttpOnly cookie. It contains its own simulated phones, device keys, accounts, ledger and idempotency records; every table is keyed by `sandbox`. Sandboxes idle for `UPI_SANDBOX_TTL_MIN` (30) minutes are deleted. At most `UPI_MAX_SANDBOXES` (100) exist at once, and the least recently used is evicted first.
+
 State-changing requests are rate-limited per client (120 per minute by default). Bodies are capped at 32 KB, and the number of demo packets is capped.
 
 ## History
@@ -115,4 +117,4 @@ The project was first a Java 17 / Spring Boot backend with H2, kept unchanged in
 - Device keys live in the simulator's memory; real phones would keep them in secure hardware.
 - The server's RSA key is regenerated at start-up; production would use a KMS or HSM.
 - Bridges are trusted to upload. Production would authenticate them (mutual TLS) and rate-limit per bridge.
-- One shared demo ledger per server process, resettable, rather than per-visitor sandboxes.
+- Sandboxes live in one server process: a restart (or a free instance spinning down) clears them all, and they don't scale across replicas. That's fine for a demo; a multi-instance deployment would keep mesh state in shared storage.
