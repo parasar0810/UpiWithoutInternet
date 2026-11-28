@@ -7,7 +7,14 @@ pg.types.setTypeParser(20, (v) => Number(v));
 
 export function createPool(connectionString = process.env.DATABASE_URL) {
   if (!connectionString) throw new Error("DATABASE_URL is not set.");
-  return new pg.Pool({ connectionString, max: Number(process.env.PG_POOL_MAX ?? 10), idleTimeoutMillis: 10_000 });
+  if (!/^postgres(ql)?:\/\/[^/\s]+@[^/\s]+/.test(connectionString.trim())) {
+    // Never print the value: it contains the password.
+    throw new Error(
+      "DATABASE_URL is not a PostgreSQL URL (expected postgresql://user:password@host/db?sslmode=require). " +
+      "Paste only the value — no 'DATABASE_URL=' prefix, quotes or masked '****' text.",
+    );
+  }
+  return new pg.Pool({ connectionString: connectionString.trim(), max: Number(process.env.PG_POOL_MAX ?? 10), idleTimeoutMillis: 10_000 });
 }
 
 export async function migrate(pool) {
